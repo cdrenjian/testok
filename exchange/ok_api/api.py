@@ -45,7 +45,6 @@ class  Ok_Api(object):
 
     def buy(self,name='ltc_usd',price=1,count=1):
         print('下买单%s'%name)
-        mail.send_mail('入场%s'%name)
         try:
             time.sleep(1)
             r=json.loads(self.spot.trade(name,'buy',price,count))
@@ -57,7 +56,6 @@ class  Ok_Api(object):
 
     def sell(self,name='ltc_usd',price=1,count=1):
         print('下卖单%s'%name)
-        mail.send_mail('出场%s'%name)
         try:
             time.sleep(1)
             r = json.loads(self.spot.trade(name,'sell',price,count))
