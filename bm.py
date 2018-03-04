@@ -7,7 +7,7 @@ secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
 # r=client.OrderBook.Order_book_get_l2(symbol='XBTUSD').result()
 import time
-part=200.0
+part=100.0
 max_order = 4
 f_oldsize = 0
 h_oldsize = 0
@@ -125,7 +125,7 @@ class Bx(object):
     def start(self):
         """建立position"""
         while True:
-            time.sleep(2)
+            time.sleep(8)
             # direct,symbol,position=self.direction()
             # self.change(direct,symbol,position)
             d=self.get_distance()
@@ -139,10 +139,14 @@ class Bx(object):
                 print("入")
                 self.order('XBTUSD', 'Buy', fb)
                 self.order('XBTH18', 'Sell', ha)
+                self.order('XBTUSD', 'Sell', fa)
+                self.order('XBTH18', 'Buy', hb)
             elif d==-1:
                 print('出')
                 self.order('XBTUSD', 'Sell', fa)
                 self.order('XBTH18', 'Buy', hb)
+                self.order('XBTUSD', 'Buy', fb)
+                self.order('XBTH18', 'Sell', ha)
 
 
 
