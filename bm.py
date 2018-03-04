@@ -1,5 +1,7 @@
 import bitmex
 import json
+from market import Ticker
+import threading
 key="B-ShzKBPVbBoptaeL2UsR0BI"
 secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
@@ -123,25 +125,52 @@ class Bx(object):
     def start(self):
         """建立position"""
         while True:
-            time.sleep(5)
-            direct,symbol,position=self.direction()
-            self.change(direct,symbol,position)
-            p=self.hp
-            side = 'Sell'
-            pr = p * 1.0002
-            self.order( "XBTH18", side=side, p=pr)
-            side = 'Buy'
-            pr = p * 0.9998
-            self.order( "XBTH18", side=side, p=pr)
+            # time.sleep(5)
+            # direct,symbol,position=self.direction()
+            # self.change(direct,symbol,position)
+            d=self.get_distance()
+            f = self.get_stats('XBTUSD')
+            h = self.get_stats('XBTH18')
+            fa=f['ask']
+            fb=f['bid']
+            ha=h['ask']
+            hb=h['bid']
+            if d==1:
+                print("入")
+                self.order(self, 'XBTUSD', 'Buy', fb)
+                self.order(self, 'XBTH18', 'Sell', ha)
+            elif d==-1:
+                print('出')
+                self.order(self, 'XBTUSD', 'Sell', fa)
+                self.order(self, 'XBTH18', 'Buy', hb)
 
 
-    def get_positions(self):
+
+
+    def get_distance(self):
+        f=self.get_stats('XBTUSD')
+        h=self.get_stats('XBTH18')
+        distance=h['markPrice']-f['markPrice']
+        if distance>=40:
+            return 1
+        elif distance<15:
+            return -1
+        else:
+            return 0
+
+
+    def ge_positions(self):
         return self.fq,self.hq
 
 
-    def get_forcep(self):
-        """得到强制点"""
-        return self.ff,self.hf
+    def get_stats(self,symbol):
+        """得到最新状态"""
+        result=t.get_stats()
+        for i in result:
+            if i['symbol']==symbol:
+                stats=i
+                return stats
+        return None
 
     def change_leverage(self):
         """用于增加lever"""
@@ -182,6 +211,9 @@ class Bx(object):
         return True
 
 
-
-k=Bx()
-k.start()
+if __name__=='__main__':
+    k=Bx()
+    k.start()
+    t=Ticker()
+    th=threading.Thread(target=t.run)  #持续更新状态值
+    th.start()
