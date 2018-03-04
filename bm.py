@@ -139,8 +139,6 @@ class Bx(object):
                 print("入")
                 self.order('XBTUSD', 'Buy', fb)
                 self.order('XBTH18', 'Sell', ha)
-                self.order('XBTUSD', 'Sell', fa)
-                self.order('XBTH18', 'Buy', hb)
             elif d==-1:
                 print('出')
                 self.order('XBTUSD', 'Sell', fa)
@@ -155,9 +153,9 @@ class Bx(object):
         f=self.get_stats('XBTUSD')
         h=self.get_stats('XBTH18')
         distance=h['markPrice']-f['markPrice']
-        if distance>=40:
+        if distance>=36:
             return 1
-        elif distance<15:
+        elif distance<8:
             return -1
         else:
             return 0
