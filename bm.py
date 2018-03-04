@@ -2,7 +2,7 @@ import bitmex
 import json
 from market import Ticker
 import threading
-key="B-ShzKBPVbBoptaeL2UsR0BI"
+key="B-ShzKBPVbBoptaeL2UsR0BI3"
 secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
 # r=client.OrderBook.Order_book_get_l2(symbol='XBTUSD').result()
