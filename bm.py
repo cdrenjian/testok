@@ -124,7 +124,6 @@ class Bx(object):
 
     def start(self):
         """建立position"""
-        global max_order
         while True:
             time.sleep(2)
             # direct,symbol,position=self.direction()
@@ -144,10 +143,6 @@ class Bx(object):
                 print('出')
                 self.order('XBTUSD', 'Sell', fa)
                 self.order('XBTH18', 'Buy', hb)
-            max_order-=1
-            if max_order<0:
-                self.cancel_all()
-                max_order=4
 
 
 
@@ -186,20 +181,18 @@ class Bx(object):
     def order(self,symbol,side,p):
         global  max_order,old_b
         print('order beigin')
-        time.sleep(2)
-        p=float(int(p))
-        if p==old_b:
-            print('not price change')
-            return False
-        else:
-            old_b=p
+        # time.sleep(2)
+        # p=float(int(p))
+        # if p==old_b:
+        #     print('not price change')
+        #     return False
+        # else:
+        #     old_b=p
         try:
             r=self.client.Order.Order_new(symbol=symbol,side=side,orderQty=part,price=p,execInst="ParticipateDoNotInitiate").result()[0]
             print(r)
         except Exception as  e:
             print(e)
-
-        time.sleep(3)
         print('order sueccs')
         max_order=max_order-1
         if max_order<0:
