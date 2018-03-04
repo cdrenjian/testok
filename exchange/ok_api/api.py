@@ -72,7 +72,7 @@ class  Ok_Api(object):
             r = self.spot.ticker(name)
         except Exception as e:
             print(e)
-            return 999.99,999.99,999.99
+            return 0,0,0
         print(r['ticker']['last'])
         return float(r['ticker']['last']),float(r['ticker']['buy']),float(r['ticker']['sell'])
     def cancel(self,name='ltc_usd',id=-1):
