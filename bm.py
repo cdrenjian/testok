@@ -124,8 +124,9 @@ class Bx(object):
 
     def start(self):
         """建立position"""
+        global max_order
         while True:
-            # time.sleep(5)
+            time.sleep(2)
             # direct,symbol,position=self.direction()
             # self.change(direct,symbol,position)
             d=self.get_distance()
@@ -143,6 +144,10 @@ class Bx(object):
                 print('出')
                 self.order(self, 'XBTUSD', 'Sell', fa)
                 self.order(self, 'XBTH18', 'Buy', hb)
+            max_order-=1
+            if max_order<0:
+                self.cancel_all()
+                max_order=4
 
 
 
@@ -159,7 +164,7 @@ class Bx(object):
             return 0
 
 
-    def ge_positions(self):
+    def get_positions(self):
         return self.fq,self.hq
 
 
@@ -212,8 +217,8 @@ class Bx(object):
 
 
 if __name__=='__main__':
+    t=Ticker()
     k=Bx()
     k.start()
-    t=Ticker()
     th=threading.Thread(target=t.run)  #持续更新状态值
     th.start()
