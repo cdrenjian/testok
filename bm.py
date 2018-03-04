@@ -138,12 +138,12 @@ class Bx(object):
             hb=h['bid']
             if d==1:
                 print("入")
-                self.order(self, 'XBTUSD', 'Buy', fb)
-                self.order(self, 'XBTH18', 'Sell', ha)
+                self.order('XBTUSD', 'Buy', fb)
+                self.order('XBTH18', 'Sell', ha)
             elif d==-1:
                 print('出')
-                self.order(self, 'XBTUSD', 'Sell', fa)
-                self.order(self, 'XBTH18', 'Buy', hb)
+                self.order('XBTUSD', 'Sell', fa)
+                self.order('XBTH18', 'Buy', hb)
             max_order-=1
             if max_order<0:
                 self.cancel_all()
