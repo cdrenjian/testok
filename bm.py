@@ -212,6 +212,6 @@ class Bx(object):
 if __name__=='__main__':
     t=Ticker()
     k=Bx()
-    k.start()
     th=threading.Thread(target=t.run)  #持续更新状态值
     th.start()
+    k.start()
