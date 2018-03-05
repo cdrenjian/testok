@@ -2,13 +2,15 @@ import bitmex
 import json
 from market import Ticker
 import threading
-key="B-ShzKBPVbBoptaeL2UsR0BI3"
+key="B-ShzKBPVbBoptaeL2UsR0BI"
 secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
 # r=client.OrderBook.Order_book_get_l2(symbol='XBTUSD').result()
 import time
 part=100.0
-max_order = 4
+max_order = 5
+postion_check=15
+reduce_count=3
 f_oldsize = 0
 h_oldsize = 0
 old_p=0
@@ -27,7 +29,10 @@ old_b=0
 #['APIKey', 'Announcement', 'Chat', 'Execution', 'Funding', 'Instrument', 'Insurance', 'Leaderboard', 'Liquidation', 'Notification', 'Order', 'OrderBook', 'Position', 'Quote', 'Schema', 'Settlement', 'Stats', 'Trade', 'User']
 
 def get_stats(symbol={"symbol":"XBTUSD"}):
-    r = client.Position.Position_get(filter=json.dumps(symbol)).result()[0][0]
+    try:
+        r = client.Position.Position_get(filter=json.dumps(symbol)).result()[0][0]
+    except Exception as e:
+        print(e)
     try:
         p=r['lastPrice']
         q=r['currentQty']
@@ -44,7 +49,6 @@ def get_stats(symbol={"symbol":"XBTUSD"}):
 class Bx(object):
     def __init__(self):
         self.client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
-        self.cancel_all()
 
     def change(self,direct,symbol,position):
         """用于实际调整positions,执行操作"""
@@ -124,8 +128,9 @@ class Bx(object):
 
     def start(self):
         """建立position"""
+        global postion_check
         while True:
-            time.sleep(8)
+            time.sleep(10)
             # direct,symbol,position=self.direction()
             # self.change(direct,symbol,position)
             d=self.get_distance()
@@ -143,17 +148,40 @@ class Bx(object):
                 print('出')
                 self.order('XBTUSD', 'Sell', fa)
                 self.order('XBTH18', 'Buy', hb)
-                self.order('XBTUSD', 'Buy', fb)
-                self.order('XBTH18', 'Sell', ha)
+                # self.order('XBTUSD', 'Buy', fb)
+                # self.order('XBTH18', 'Sell', ha)
+            if postion_check>0:
+                postion_check=postion_check-1
+            else:
+                postion_check=15
+                symbol,side=self.position_change()  #调整位置平衡
+                s= self.get_stats(symbol)
+                sa = s['ask']
+                sb = s['bid']
+                if side==-1:
+                    self.order(symbol, 'Sell', sa)
+                elif side==1:
+                    self.order(symbol, 'Buy', sb)
+
+
+
+
+
 
 
 
 
     def get_distance(self):
+        global reduce_count
+        if postion_check==0:
+            reduce_count=reduce_count-1
+        if reduce_count<0:
+            reduce_count=3
+            return -1
         f=self.get_stats('XBTUSD')
         h=self.get_stats('XBTH18')
         distance=h['markPrice']-f['markPrice']
-        if distance>=36:
+        if distance>=70:
             return 1
         elif distance<8:
             return -1
@@ -181,7 +209,7 @@ class Bx(object):
         return True
 
     def order(self,symbol,side,p):
-        global  max_order,old_b
+        global  max_order,old_b,postion_check,reduce_count
         print('order beigin')
         # time.sleep(2)
         # p=float(int(p))
@@ -194,24 +222,56 @@ class Bx(object):
             r=self.client.Order.Order_new(symbol=symbol,side=side,orderQty=part,price=p,execInst="ParticipateDoNotInitiate").result()[0]
             print(r)
         except Exception as  e:
-            print(e)
+            print('异常%s'%e)
+            if 'Account has insufficient Available Balance' in str(e):
+                reduce_count=-1
+                print('not enough m')
+                return False
         print('order sueccs')
         max_order=max_order-1
         if max_order<0:
             self.cancel_all()
-            self.client.Position.Position_updateLeverage(symbol=symbol,leverage=25.0)
-            max_order=4
+            try:
+                self.client.Position.Position_updateLeverage(symbol=symbol,leverage=25.0)
+            except Exception as e:
+                print(e)
+            max_order=5
+
 
         # order_new(symbol, side=side, simple_order_qty=simple_order_qty, quantity=quantity, order_qty=order_qty,
         #           price=price,
     def cancel_all(self):
-        time.sleep(1)
+        time.sleep(3)
         print('chancel')
-        print(self.client.Order.Order_cancelAll().result())
+        try:
+            print(self.client.Order.Order_cancelAll().result())
+        except Exception as e:
+            print(e)
         return True
+
+    def position_change(self):
+        fp, fq, ff = get_stats({"symbol": symbol1})
+        hp, hq, hf = get_stats({"symbol": symbol2})
+        afq=abs(fq)
+        ahq=abs(hq)
+        if afq>ahq:
+            if hq<0:
+                return symbol2, -1
+            else:
+                return symbol2, 1
+        elif afq<ahq:
+            if fq<0:
+                return symbol1, -1
+            else:
+                return symbol1, 1
+        else:
+            return symbol1,0
+
 
 
 if __name__=='__main__':
+    symbol1='XBTUSD'
+    symbol2='XBTH18'
     t=Ticker()
     k=Bx()
     th=threading.Thread(target=t.run)  #持续更新状态值
