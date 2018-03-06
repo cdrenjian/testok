@@ -13,6 +13,7 @@ postion_check=15
 reduce_count=3
 f_oldsize = 0
 h_oldsize = 0
+m_enough=True
 old_p=0
 old_b=0
 # def get_operations(Api):
@@ -130,7 +131,6 @@ class Bx(object):
         """建立position"""
         global postion_check
         while True:
-            time.sleep(10)
             # direct,symbol,position=self.direction()
             # self.change(direct,symbol,position)
             d=self.get_distance()
@@ -140,6 +140,8 @@ class Bx(object):
             fb=f['bid']
             ha=h['ask']
             hb=h['bid']
+            if not fa or not fb or not ha or not hb:
+                continue
             if d==1:
                 print("入")
                 self.order('XBTUSD', 'Buy', fb)
@@ -150,6 +152,8 @@ class Bx(object):
                 self.order('XBTH18', 'Buy', hb)
                 # self.order('XBTUSD', 'Buy', fb)
                 # self.order('XBTH18', 'Sell', ha)
+            else:
+                print('not action')
             if postion_check>0:
                 postion_check=postion_check-1
             else:
@@ -162,6 +166,7 @@ class Bx(object):
                     self.order(symbol, 'Sell', sa)
                 elif side==1:
                     self.order(symbol, 'Buy', sb)
+            time.sleep(10)
 
 
 
@@ -172,16 +177,17 @@ class Bx(object):
 
 
     def get_distance(self):
-        global reduce_count
+        global reduce_count,part
         if postion_check==0:
             reduce_count=reduce_count-1
         if reduce_count<0:
-            reduce_count=3
+            part=2*part
+            reduce_count=0
             return -1
         f=self.get_stats('XBTUSD')
         h=self.get_stats('XBTH18')
         distance=h['markPrice']-f['markPrice']
-        if distance>=70:
+        if distance>=80:
             return 1
         elif distance<8:
             return -1
@@ -209,7 +215,7 @@ class Bx(object):
         return True
 
     def order(self,symbol,side,p):
-        global  max_order,old_b,postion_check,reduce_count
+        global  max_order,old_b,postion_check,reduce_count,part,m_enough
         print('order beigin')
         # time.sleep(2)
         # p=float(int(p))
@@ -218,16 +224,25 @@ class Bx(object):
         #     return False
         # else:
         #     old_b=p
+        if not m_enough and side=='Buy':
+            print('not m to buy')
+            return False
         try:
             r=self.client.Order.Order_new(symbol=symbol,side=side,orderQty=part,price=p,execInst="ParticipateDoNotInitiate").result()[0]
             print(r)
+            if not m_enough:
+                time.sleep(15)
+                m_enough=True
         except Exception as  e:
             print('异常%s'%e)
             if 'Account has insufficient Available Balance' in str(e):
                 reduce_count=-1
+                m_enough=False
                 print('not enough m')
+
                 return False
         print('order sueccs')
+        part=100
         max_order=max_order-1
         if max_order<0:
             self.cancel_all()
@@ -250,16 +265,19 @@ class Bx(object):
         return True
 
     def position_change(self):
+        global part
         fp, fq, ff = get_stats({"symbol": symbol1})
         hp, hq, hf = get_stats({"symbol": symbol2})
         afq=abs(fq)
         ahq=abs(hq)
         if afq>ahq:
+            part=afq-ahq
             if hq<0:
                 return symbol2, -1
             else:
                 return symbol2, 1
         elif afq<ahq:
+            part=afq-ahq
             if fq<0:
                 return symbol1, -1
             else:
@@ -272,6 +290,7 @@ class Bx(object):
 if __name__=='__main__':
     symbol1='XBTUSD'
     symbol2='XBTH18'
+    print('start')
     t=Ticker()
     k=Bx()
     th=threading.Thread(target=t.run)  #持续更新状态值
