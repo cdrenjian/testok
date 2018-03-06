@@ -166,7 +166,7 @@ class Bx(object):
                     self.order(symbol, 'Sell', sa)
                 elif side==1:
                     self.order(symbol, 'Buy', sb)
-            time.sleep(10)
+            time.sleep(8)
 
 
 
@@ -183,16 +183,43 @@ class Bx(object):
         if reduce_count<0:
             part=2*part
             reduce_count=0
-            return -1
+            if self.fq>0:
+                return -1
+            else:
+                return  1
         f=self.get_stats('XBTUSD')
         h=self.get_stats('XBTH18')
-        distance=h['markPrice']-f['markPrice']
+        hm=h['markPrice']
+        fm=f['markPrice']
+        distance=hm-fm
+        self.is_force_close(hm,fm)
         if distance>=80:
             return 1
-        elif distance<8:
+        elif distance<30:
             return -1
         else:
             return 0
+
+    def is_force_close(self,hm,fm):
+        global part
+        if abs(self.ff-fm)<80:
+            f = self.get_stats(symbol1)
+            fa = f['ask']
+            fb = f['bid']
+            part = self.fq
+            if self.fp<0:
+                self.order(symbol1,'Buy',fb)
+            else:
+                self.order(symbol1, 'Sell', fa)
+        if abs(self.hf-hm)<80:
+            h = self.get_stats(symbol2)
+            ha = h['ask']
+            hb = h['bid']
+            part = self.hq
+            if self.hp<0:
+                self.order(symbol2,'Buy',hb)
+            else:
+                self.order(symbol2, 'Sell', ha)
 
 
     def get_positions(self):
@@ -227,9 +254,12 @@ class Bx(object):
         if not m_enough and side=='Buy':
             print('not m to buy')
             return False
+        if part>500:
+            part=300
         try:
             r=self.client.Order.Order_new(symbol=symbol,side=side,orderQty=part,price=p,execInst="ParticipateDoNotInitiate").result()[0]
             print(r)
+            part=100
             if not m_enough:
                 time.sleep(15)
                 m_enough=True
@@ -270,6 +300,10 @@ class Bx(object):
         hp, hq, hf = get_stats({"symbol": symbol2})
         afq=abs(fq)
         ahq=abs(hq)
+        self.fq=fq
+        self.hq=hq
+        self.ff=ff
+        self.hf=hf
         if afq>ahq:
             part=afq-ahq
             if hq<0:
@@ -277,7 +311,7 @@ class Bx(object):
             else:
                 return symbol2, 1
         elif afq<ahq:
-            part=afq-ahq
+            part=ahq-afq
             if fq<0:
                 return symbol1, -1
             else:
