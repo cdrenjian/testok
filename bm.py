@@ -50,6 +50,7 @@ def get_stats(symbol={"symbol":"XBTUSD"}):
 class Bx(object):
     def __init__(self):
         self.client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
+        self.position_change()
 
     def change(self,direct,symbol,position):
         """用于实际调整positions,执行操作"""
