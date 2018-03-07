@@ -171,7 +171,7 @@ class Bx(object):
 
 
     def get_distance(self):
-        global reduce_count,part
+        global reduce_count,part,m_enough,postion_check
         if postion_check==0:
             reduce_count=reduce_count-1
         # if reduce_count<0:
@@ -192,6 +192,8 @@ class Bx(object):
         elif distance<30:
             return -1
         else:
+            m_enough=False
+            postion_check=-1
             return 0
 
     def is_force_close(self,hm,fm):
