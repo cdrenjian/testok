@@ -11,6 +11,7 @@ import hmac
 import json
 import time
 import urllib
+import datetime
 
 from websocket import create_connection
 # ws = create_connection("wss://www.bitmex.com/realtime?subscribe=quote:XBTUSD")
@@ -54,7 +55,17 @@ class Ticker(object):
                 i[key]=value
 
     def run(self):
+        old_time=datetime.datetime.now()
+        old_p=stats[0]['ask']
         while True:
+            new_time=datetime.datetime.now()
+            new_p = stats[0]['ask']
+            if (new_time-old_time).seconds>120:
+                old_time=new_time
+                if new_p==old_p:
+                    self.__init__()
+                else:
+                    old_p == new_p
             self.update_stats()
 
     def update_stats(self):
