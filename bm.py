@@ -15,6 +15,8 @@ f_oldsize = 0
 h_oldsize = 0
 m_enough=True
 not_cancle=False
+protect=False
+check_banlance=True
 old_p=0
 old_b=0
 symbol1='XBTUSD'
@@ -123,7 +125,7 @@ class Bx(object):
 
     def start(self):
         """建立position"""
-        global postion_check,reduce_count,not_cancle
+        global postion_check,reduce_count,not_cancle,check_banlance
         while True:
             if not_cancle:
                 time.sleep(20)
@@ -166,14 +168,6 @@ class Bx(object):
                     self.order(symbol, 'Buy', sb)
             time.sleep(2)
 
-
-
-
-
-
-
-
-
     def get_distance(self):
         global reduce_count,part,m_enough,postion_check
         if postion_check==0:
@@ -201,9 +195,36 @@ class Bx(object):
             return 0
 
     def is_force_close(self,hm,fm):
-        global part,not_cancle
-        if abs(self.ff-fm)<120:
+        global part,not_cancle,protect,check_banlance
+        df=abs(self.ff-fm)
+        dh=abs(self.hf-hm)
+        if df<180:
             not_cancle = True
+            protect=True
+            check_banlance=False
+            f = self.get_stats(symbol1)
+            fa = f['ask']
+            fb = f['bid']
+            part = abs(self.fq)/3.0
+            if self.fq>0:
+                self.order(symbol1,'Buy',fb)
+            else:
+                self.order(symbol1, 'Sell', fa)
+        if dh<180:
+            not_cancle = True
+            protect=True
+            check_banlance=False
+            h = self.get_stats(symbol2)
+            ha = h['ask']
+            hb = h['bid']
+            part = abs(self.hq)/3.0
+            if self.hq>0:
+                self.order(symbol2,'Buy',hb)
+            else:
+                self.order(symbol2, 'Sell', ha)
+        if df<80:
+            not_cancle = True
+            protect=True
             f = self.get_stats(symbol1)
             fa = f['ask']
             fb = f['bid']
@@ -212,8 +233,9 @@ class Bx(object):
                 self.order(symbol1,'Buy',fb)
             else:
                 self.order(symbol1, 'Sell', fa)
-        if abs(self.hf-hm)<120:
+        if dh<80:
             not_cancle = True
+            protect=True
             h = self.get_stats(symbol2)
             ha = h['ask']
             hb = h['bid']
@@ -224,8 +246,6 @@ class Bx(object):
                 self.order(symbol2, 'Sell', ha)
 
 
-    def get_positions(self):
-        return self.fq,self.hq
 
     def get_stats_by_rest(self,symbol={"symbol": "XBTUSD"}):
         print('begin rebanlance position')
@@ -255,22 +275,10 @@ class Bx(object):
                 return stats
         return None
 
-    def change_leverage(self):
-        """用于增加lever"""
-        #Position_updateLeverage
-        pass
-        return True
 
     def order(self,symbol,side,p):
-        global  max_order,old_b,postion_check,reduce_count,part,m_enough
+        global  max_order,old_b,postion_check,reduce_count,part,m_enough,protect
         print('order beigin')
-        # time.sleep(2)
-        # p=float(int(p))
-        # if p==old_b:
-        #     print('not price change')
-        #     return False
-        # else:
-        #     old_b=p
         if not m_enough and  reduce_count>0:
             print('not m to buy')
             return False
@@ -293,15 +301,16 @@ class Bx(object):
         max_order=max_order-1
         if max_order<0:
             self.cancel_all()
+            if protect:
+                leverage=1.0
+            else:
+                leverage=25.0
             try:
-                self.client.Position.Position_updateLeverage(symbol=symbol,leverage=25.0)
+                self.client.Position.Position_updateLeverage(symbol=symbol,leverage=leverage)
             except Exception as e:
                 print(e)
             max_order=5
 
-
-        # order_new(symbol, side=side, simple_order_qty=simple_order_qty, quantity=quantity, order_qty=order_qty,
-        #           price=price,
     def cancel_all(self):
         global m_enough,not_cancle
         time.sleep(3)
