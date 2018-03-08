@@ -7,13 +7,14 @@ secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 # client = bitmex.bitmex(test=False, api_key=key, api_secret=secert)
 # r=client.OrderBook.Order_book_get_l2(symbol='XBTUSD').result()
 import time
-part=300.0
+part=100.0
 max_order = 5
 postion_check=6
 reduce_count=3
 f_oldsize = 0
 h_oldsize = 0
 m_enough=True
+not_cancle=False
 old_p=0
 old_b=0
 symbol1='XBTUSD'
@@ -122,8 +123,11 @@ class Bx(object):
 
     def start(self):
         """建立position"""
-        global postion_check,reduce_count
+        global postion_check,reduce_count,not_cancle
         while True:
+            if not_cancle:
+                time.sleep(20)
+                not_cancle=False
             # direct,symbol,position=self.direction()
             # self.change(direct,symbol,position)
             d=self.get_distance()
@@ -183,13 +187,13 @@ class Bx(object):
         #         return  1
         f=self.get_stats('XBTUSD')
         h=self.get_stats('XBTH18')
-        hm=h['markPrice']
-        fm=f['markPrice']
+        hm=h['ask']
+        fm=f['ask']
         distance=hm-fm
         self.is_force_close(hm,fm)
-        if distance>=80:
+        if distance>=90:
             return 1
-        elif distance<30:
+        elif distance<20:
             return -1
         else:
             m_enough=False
@@ -197,8 +201,9 @@ class Bx(object):
             return 0
 
     def is_force_close(self,hm,fm):
-        global part
-        if abs(self.ff-fm)<80:
+        global part,not_cancle
+        if abs(self.ff-fm)<120:
+            not_cancle = True
             f = self.get_stats(symbol1)
             fa = f['ask']
             fb = f['bid']
@@ -207,7 +212,8 @@ class Bx(object):
                 self.order(symbol1,'Buy',fb)
             else:
                 self.order(symbol1, 'Sell', fa)
-        if abs(self.hf-hm)<80:
+        if abs(self.hf-hm)<120:
+            not_cancle = True
             h = self.get_stats(symbol2)
             ha = h['ask']
             hb = h['bid']
@@ -271,7 +277,7 @@ class Bx(object):
         try:
             r=self.client.Order.Order_new(symbol=symbol,side=side,orderQty=part,price=p,execInst="ParticipateDoNotInitiate").result()[0]
             print(r)
-            part=300
+            part=100
             if not m_enough:
                 time.sleep(15)
         except Exception as  e:
@@ -283,7 +289,7 @@ class Bx(object):
 
                 return False
         print('order sueccs')
-        part=300
+        part=100
         max_order=max_order-1
         if max_order<0:
             self.cancel_all()
@@ -297,12 +303,14 @@ class Bx(object):
         # order_new(symbol, side=side, simple_order_qty=simple_order_qty, quantity=quantity, order_qty=order_qty,
         #           price=price,
     def cancel_all(self):
-        global m_enough
+        global m_enough,not_cancle
         time.sleep(3)
         print('chancel')
         if not m_enough:
             if self.get_available_m()>3.8:
                 m_enough=True
+        if not_cancle:
+            return False
         try:
             print(self.client.Order.Order_cancelAll().result())
         except Exception as e:
@@ -323,12 +331,12 @@ class Bx(object):
             part=afq-ahq
             if fq<0:
                 if not m_enough:
-                    part=400
+                    part=100
                     reduce_count=-1
                     return symbol1, 1
                 return symbol2, 1
             elif not m_enough:
-                part=400
+                part=100
                 reduce_count=-1
                 return symbol1, -1
             return symbol2, -1
@@ -336,18 +344,26 @@ class Bx(object):
             part=ahq-afq
             if hq<0:
                 if not m_enough:
-                    part=400
+                    part=100
                     reduce_count=-1
                     return symbol2, 1
                 return symbol1, 1
             elif not m_enough:
-                part=400
+                part=100
                 reduce_count=-1
                 return symbol2, -1
             return symbol1, -1
-        else:
-            return symbol1,0
-
+        elif hq<0:
+                if not m_enough:
+                    part=100
+                    reduce_count=-1
+                    return symbol2, 1
+                return symbol1, 1
+        elif not m_enough:
+            part=100
+            reduce_count=-1
+            return symbol2, -1
+        return symbol1, -1
 
 
 
