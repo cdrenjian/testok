@@ -198,30 +198,30 @@ class Bx(object):
         global part,not_cancle,protect,check_banlance
         df=abs(self.ff-fm)
         dh=abs(self.hf-hm)
-        if df<180:
-            not_cancle = True
-            protect=True
-            check_banlance=False
-            f = self.get_stats(symbol1)
-            fa = f['ask']
-            fb = f['bid']
-            part = abs(self.fq)/3.0
-            if self.fq>0:
-                self.order(symbol1,'Buy',fb)
-            else:
-                self.order(symbol1, 'Sell', fa)
-        if dh<180:
-            not_cancle = True
-            protect=True
-            check_banlance=False
-            h = self.get_stats(symbol2)
-            ha = h['ask']
-            hb = h['bid']
-            part = abs(self.hq)/3.0
-            if self.hq>0:
-                self.order(symbol2,'Buy',hb)
-            else:
-                self.order(symbol2, 'Sell', ha)
+        # if df<180:
+        #     not_cancle = True
+        #     protect=True
+        #     check_banlance=False
+        #     f = self.get_stats(symbol1)
+        #     fa = f['ask']
+        #     fb = f['bid']
+        #     part = abs(self.fq)/3.0
+        #     if self.fq>0:
+        #         self.order(symbol1,'Buy',fb)
+        #     else:
+        #         self.order(symbol1, 'Sell', fa)
+        # if dh<180:
+        #     not_cancle = True
+        #     protect=True
+        #     check_banlance=False
+        #     h = self.get_stats(symbol2)
+        #     ha = h['ask']
+        #     hb = h['bid']
+        #     part = abs(self.hq)/3.0
+        #     if self.hq>0:
+        #         self.order(symbol2,'Buy',hb)
+        #     else:
+        #         self.order(symbol2, 'Sell', ha)
         if df<80:
             not_cancle = True
             protect=True
