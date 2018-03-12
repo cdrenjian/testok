@@ -19,6 +19,8 @@ protect=False
 check_banlance=True
 old_p=0
 old_b=0
+c_ask=5
+c_bid=5
 symbol1='XBTUSD'
 symbol2='XBTH18'
 # def get_operations(Api):
@@ -125,7 +127,7 @@ class Bx(object):
 
     def start(self):
         """建立position"""
-        global postion_check,reduce_count,not_cancle,check_banlance
+        global postion_check,reduce_count,not_cancle,check_banlance,c_ask,c_bid
         while True:
             if not_cancle:
                 time.sleep(20)
@@ -142,18 +144,32 @@ class Bx(object):
             if not fa or not fb or not ha or not hb:
                 continue
             reduce_count=1 #每次流程前均认为不减
-            if d==1:
-                print("入")
-                self.order('XBTUSD', 'Buy', fb)
-                self.order('XBTH18', 'Sell', ha)
-            elif d==-1:
-                print('出')
-                self.order('XBTUSD', 'Sell', fa)
-                self.order('XBTH18', 'Buy', hb)
-                # self.order('XBTUSD', 'Buy', fb)
-                # self.order('XBTH18', 'Sell', ha)
-            else:
-                print('not action')
+            if self.fq<0:
+                if self.fq<-500:
+                    c_ask=1.5*c_ask
+                    if c_ask>20:
+                        c_ask=20
+            elif self.fq>0:
+                if self.fq>500:
+                    c_bid=1.5*c_bid
+                    if c_bid>20:
+                        c_bid=20
+            self.order('XBTUSD', 'Buy', fb-c_bid)
+            self.order('XBTUSD', 'Sell', fa+c_ask)
+
+            #
+            # if d==1:
+            #     print("入")
+            #     self.order('XBTUSD', 'Buy', fb)
+            #     self.order('XBTH18', 'Sell', ha)
+            # elif d==-1:
+            #     print('出')
+            #     self.order('XBTUSD', 'Sell', fa)
+            #     self.order('XBTH18', 'Buy', hb)
+            #     # self.order('XBTUSD', 'Buy', fb)
+            #     # self.order('XBTH18', 'Sell', ha)
+            # else:
+            #     print('not action')
             if postion_check>0:
                 postion_check=postion_check-1
             else:
