@@ -9,7 +9,7 @@ secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 import time
 part=100.0
 max_order = 5
-postion_check=6
+postion_check=4
 reduce_count=3
 f_oldsize = 0
 h_oldsize = 0
@@ -19,8 +19,8 @@ protect=False
 check_banlance=True
 old_p=0
 old_b=0
-c_ask=5
-c_bid=5
+c_ask=6
+c_bid=6
 symbol1='XBTUSD'
 symbol2='XBTH18'
 # def get_operations(Api):
@@ -145,15 +145,21 @@ class Bx(object):
                 continue
             reduce_count=1 #每次流程前均认为不减
             if self.fq<0:
-                if self.fq<-500:
-                    c_ask=1.5*c_ask
-                    if c_ask>20:
-                        c_ask=20
+                if self.fq<-300:
+                    c_ask=int(1.5*c_ask)
+                    if c_ask>50:
+                        c_ask=100
+                    c_bid=int(0.8*c_bid+1)
+                else:
+                    c_ask=6
             elif self.fq>0:
-                if self.fq>500:
-                    c_bid=1.5*c_bid
-                    if c_bid>20:
-                        c_bid=20
+                if self.fq>300:
+                    c_bid=int(1.5*c_bid)
+                    if c_bid>50:
+                        c_bid=100
+                    c_ask=int(0.8*c_ask+1)
+                else:
+                    c_bid=6
             self.order('XBTUSD', 'Buy', fb-c_bid)
             self.order('XBTUSD', 'Sell', fa+c_ask)
 
@@ -173,15 +179,15 @@ class Bx(object):
             if postion_check>0:
                 postion_check=postion_check-1
             else:
-                postion_check=6
+                postion_check=4
                 symbol,side=self.position_change()  #调整位置平衡
                 s= self.get_stats(symbol)
                 sa = s['ask']
                 sb = s['bid']
                 if side==-1:
-                    self.order(symbol, 'Sell', sa)
+                    self.order(symbol, 'Sell', sa+3)
                 elif side==1:
-                    self.order(symbol, 'Buy', sb)
+                    self.order(symbol, 'Buy', sb-3)
             time.sleep(2)
 
     def get_distance(self):
@@ -238,7 +244,7 @@ class Bx(object):
         #         self.order(symbol2,'Buy',hb)
         #     else:
         #         self.order(symbol2, 'Sell', ha)
-        if df<80:
+        if df<100:
             not_cancle = True
             protect=True
             f = self.get_stats(symbol1)
@@ -249,7 +255,7 @@ class Bx(object):
                 self.order(symbol1,'Buy',fb)
             else:
                 self.order(symbol1, 'Sell', fa)
-        if dh<80:
+        if dh<100:
             not_cancle = True
             protect=True
             h = self.get_stats(symbol2)
@@ -352,43 +358,45 @@ class Bx(object):
         self.hq=hq
         self.ff=ff
         self.hf=hf
-        if afq>ahq:
+        if afq>ahq:  #只采取近期的增加对冲，不涉及远期操作
             part=afq-ahq
             if fq<0:
-                if not m_enough:
-                    part=100
-                    reduce_count=-1
-                    return symbol1, 1
+                # if not m_enough:
+                #     part=100
+                #     reduce_count=-1
+                #     return symbol1, 1
                 return symbol2, 1
-            elif not m_enough:
-                part=100
-                reduce_count=-1
-                return symbol1, -1
+            # elif not m_enough:
+            #     part=100
+            #     reduce_count=-1
+            #     return symbol1, -1
             return symbol2, -1
         elif afq<ahq:
             part=ahq-afq
             if hq<0:
-                if not m_enough:
-                    part=100
-                    reduce_count=-1
-                    return symbol2, 1
-                return symbol1, 1
-            elif not m_enough:
-                part=100
-                reduce_count=-1
-                return symbol2, -1
-            return symbol1, -1
-        elif hq<0:
-                if not m_enough:
-                    part=100
-                    reduce_count=-1
-                    return symbol2, 1
-                return symbol1, 1
-        elif not m_enough:
-            part=100
-            reduce_count=-1
+                # if not m_enough:
+                #     part=100
+                #     reduce_count=-1
+                #     return symbol2, 1
+                # return symbol1, 1
+                return symbol2, 1
+            # elif not m_enough:
+            #     part=100
+            #     reduce_count=-1
+            #     return symbol2, -1
+            # return symbol1, -1
             return symbol2, -1
-        return symbol1, -1
+        # elif hq<0:
+        #         if not m_enough:
+        #             part=100
+        #             reduce_count=-1
+        #             return symbol2, 1
+        #         return symbol1, 1
+        # elif not m_enough:
+        #     part=100
+        #     reduce_count=-1
+        #     return symbol2, -1
+        return symbol1, 0
 
 
 
@@ -399,4 +407,6 @@ if __name__=='__main__':
     th=threading.Thread(target=t.run)  #持续更新状态值
     th.start()
     k.start()
+    print('载入中...')
+    time.sleep(5)
 
