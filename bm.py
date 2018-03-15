@@ -8,7 +8,7 @@ secert="PqUDgdHt2zTxQKXu_QKq-bgQWZfurgmzkPXKat-ZrQd68T7D"
 # r=client.OrderBook.Order_book_get_l2(symbol='XBTUSD').result()
 import time
 part=100.0
-max_order = 5
+max_order = 4
 postion_check=4
 reduce_count=3
 f_oldsize = 0
@@ -19,8 +19,8 @@ protect=False
 check_banlance=True
 old_p=0
 old_b=0
-c_ask=6
-c_bid=6
+c_ask=4
+c_bid=4
 symbol1='XBTUSD'
 symbol2='XBTH18'
 # def get_operations(Api):
@@ -145,21 +145,22 @@ class Bx(object):
                 continue
             reduce_count=1 #每次流程前均认为不减
             if self.fq<0:
-                if self.fq<-300:
+                if self.fq<-200:
                     c_ask=int(1.5*c_ask)
                     if c_ask>50:
-                        c_ask=100
+                        c_ask=150
                     c_bid=int(0.8*c_bid+1)
                 else:
-                    c_ask=6
+                    c_ask=4
             elif self.fq>0:
-                if self.fq>300:
+                if self.fq>200:
                     c_bid=int(1.5*c_bid)
                     if c_bid>50:
-                        c_bid=100
+                        c_bid=150
                     c_ask=int(0.8*c_ask+1)
                 else:
-                    c_bid=6
+                    c_bid=4
+            print('当前c_a:{0} c_b:{1}'.format(c_ask,c_bid))
             self.order('XBTUSD', 'Buy', fb-c_bid)
             self.order('XBTUSD', 'Sell', fa+c_ask)
 
@@ -185,10 +186,11 @@ class Bx(object):
                 sa = s['ask']
                 sb = s['bid']
                 if side==-1:
-                    self.order(symbol, 'Sell', sa+3)
+                    self.order(symbol, 'Sell', sa+1)
                 elif side==1:
-                    self.order(symbol, 'Buy', sb-3)
-            time.sleep(2)
+                    self.order(symbol, 'Buy', sb-1)
+                time.sleep(5)
+            time.sleep(1.5)
 
     def get_distance(self):
         global reduce_count,part,m_enough,postion_check
@@ -244,7 +246,7 @@ class Bx(object):
         #         self.order(symbol2,'Buy',hb)
         #     else:
         #         self.order(symbol2, 'Sell', ha)
-        if df<100:
+        if df<160:
             not_cancle = True
             protect=True
             f = self.get_stats(symbol1)
@@ -255,7 +257,7 @@ class Bx(object):
                 self.order(symbol1,'Buy',fb)
             else:
                 self.order(symbol1, 'Sell', fa)
-        if dh<100:
+        if dh<160:
             not_cancle = True
             protect=True
             h = self.get_stats(symbol2)
@@ -321,7 +323,7 @@ class Bx(object):
         print('order sueccs')
         part=100
         max_order=max_order-1
-        if max_order<0:
+        if max_order<1:
             self.cancel_all()
             if protect:
                 leverage=1.0
@@ -331,7 +333,7 @@ class Bx(object):
                 self.client.Position.Position_updateLeverage(symbol=symbol,leverage=leverage)
             except Exception as e:
                 print(e)
-            max_order=5
+            max_order=4
 
     def cancel_all(self):
         global m_enough,not_cancle
